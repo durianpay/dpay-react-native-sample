@@ -7,7 +7,8 @@
  */
 
 import React from 'react';
-import RNDpaySDK from 'react-native-dpay-sdk';
+// import RNDpaySdk from 'react-native-dpay-sdk';
+// import onPress from 'react-native-dpay-sdk';
 import {
   SafeAreaView,
   ScrollView,
@@ -19,6 +20,8 @@ import {
   TouchableOpacity,
   NativeEventEmitter,
   NativeModules,
+  Alert,
+  Platform
 } from 'react-native';
 
 import {
@@ -29,6 +32,10 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 import {Component} from 'react/cjs/react.production.min';
+
+const { CalendarManager } = NativeModules;
+// const { RNDpaySdk } = NativeModules;
+const { RNDpaySDK, ReactNativeEventEmitter } = NativeModules;
 
 var dpayEvent = null;
 
@@ -98,15 +105,18 @@ const App = () => {
   };
 
   const success = () => {
-    console.log('successful callback');
+    console.log(data);
+    Alert.alert(data);
   };
 
   const failed = () => {
-    console.log('failed type callback');
+    console.log(data);
+    Alert.alert(data);
   };
 
-  const close = () => {
-    console.log('close callback');
+  const close = (data) => {
+    console.log(data);
+    Alert.alert(data);
   };
 
   const isDarkMode = useColorScheme() === 'dark';
@@ -129,19 +139,21 @@ const App = () => {
       order_id: ordersJson.data.id,
       access_token: ordersJson.data.access_token,
     };
-    dpayEvent = new NativeEventEmitter(NativeModules.RNDpaySDK);
+    dpayEvent = new NativeEventEmitter(NativeModules.ReactNativeEventEmitter);
     dpayEvent.addListener('DpaySuccess', success);
     dpayEvent.addListener('DpayFailure', failed);
-    dpayEvent.addListener('DpayClose', close);
-    RNDpaySDK.openCheckout(checkoutOptions);
+    dpayEvent.addListener('DpayClose', (data) => {close(data)});
+    CalendarManager.constantsToExport();
+    RNDpaySDK.open(checkoutOptions);
+    //DpaySDK
   };
 
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
+      <View
         contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
+        style={styles.container}>
         <View>
           <TouchableOpacity
             style={styles.checkoutButton}
@@ -149,12 +161,17 @@ const App = () => {
             <Text>Click Here</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    height: '100%',
+    padding: 3,
+  },
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24,

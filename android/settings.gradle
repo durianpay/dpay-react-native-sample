@@ -1,4 +1,8 @@
 rootProject.name = 'sampleReactApp'
+include ':react-native-config'
+project(':react-native-config').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-config/android')
+include ':react-native-dpay-sdk'
+project(':react-native-dpay-sdk').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-dpay-sdk/android')
 include ':react-native-dpay-sdk'
 project(':react-native-dpay-sdk').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-dpay-sdk/android')
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)

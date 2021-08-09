@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
+import com.lugg.ReactNativeConfig.ReactNativeConfigPackage;
+import com.reactlibrary.RNDpaySdkPackage;
 import com.reactlibrary.RNDpaySdkPackage;
 import com.reactlibrary.RNDpaySdkPackage;
 import com.facebook.react.ReactInstanceManager;
