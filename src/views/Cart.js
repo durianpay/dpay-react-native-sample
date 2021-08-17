@@ -77,16 +77,13 @@ function Cart({ navigation }) {
   var dpayEvent = null;
 
   const getOrderDetails = async () => {
-    // xendit staging - ZHBfbGl2ZV9RMHNtem9sQ2dxRUFTakNOOg== ZHBfdGVzdF9lZDZiYTkzYzg5N2JiNzcxOg==
-    //          production - ZHBfbGl2ZV9lZDZiYTkzYzg5N2JiNzdlMDo=
     try {
       const customer = {email: 'jude_casper@koss.info'};
-      const response = await fetch('https://api.durianpay.id/orders', {
+      const response = await fetch('http://192.168.247.111:4001/orders', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: 'ZHBfbGl2ZV9lZDZiYTkzYzg5N2JiNzdlMDo=',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           amount: '10001',
@@ -96,7 +93,7 @@ function Cart({ navigation }) {
         }),
       });
       const json = await response.json();
-      console.log('json', json.data.access_token);
+      console.log('json', json);
       return json;
     } catch (error) {
       console.error(error);
@@ -146,15 +143,15 @@ function Cart({ navigation }) {
     console.log('open checkout');
     var ordersJson = await getOrderDetails();
     var checkoutOptions = {
-      environment: 'production',
+      environment: 'staging',
       locale: 'en',
       site_name: 'Movie Ticket',
       customer_id: 'cust_react_001',
       amount: '15000',
       currency: 'IDR',
       customer_email: 'joe@reactnative.com',
-      order_id: ordersJson.data.id,
-      access_token: ordersJson.data.access_token,
+      order_id: ordersJson.order_id,
+      access_token: ordersJson.access_token,
     };
 
     // console.log("native modules", Object.list(NativeModules));
