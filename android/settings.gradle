@@ -1,0 +1,11 @@
+rootProject.name = 'react-native-grocery'
+
+apply from: '../node_modules/react-native-unimodules/gradle.groovy'
+includeUnimodulesProjects()
+
+include ':react-native-dpay-sdk'
+project(':react-native-dpay-sdk').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-dpay-sdk/android')
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle");
+applyNativeModulesSettingsGradle(settings)
+
+include ':app'
