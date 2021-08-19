@@ -6,8 +6,8 @@
  * @flow strict-local
  */
 
-import React from 'react';
-// import RNDpaySdk from 'react-native-dpay-sdk';
+import React, {useState, useEffect} from 'react';
+import RNDpaySdk from 'react-native-dpay-sdk';
 // import onPress from 'react-native-dpay-sdk';
 import {
   SafeAreaView,
@@ -35,7 +35,7 @@ import {Component} from 'react/cjs/react.production.min';
 
 const { CalendarManager } = NativeModules;
 // const { RNDpaySdk } = NativeModules;
-const { RNDpaySDK, ReactNativeEventEmitter } = NativeModules;
+// const { DpaySdk, ReactNativeEventEmitter } = NativeModules;
 
 var dpayEvent = null;
 
@@ -77,6 +77,28 @@ const App = () => {
   //   }
   // }
 
+  
+  useEffect(() => {
+    dpayEvent = new NativeEventEmitter(NativeModules.ReactNativeEventEmitter);
+    dpayEvent.addListener('DpaySuccess', data => {
+      success(data);
+    });
+    dpayEvent.addListener('DpayFailure', data => {
+      failed(data);
+    });
+    dpayEvent.addListener('DpayClose', data => {
+      close(data);
+    });
+    return function cleanup() {
+      if (dpayEvent) {
+        dpayEvent.removeListener('DpaySuccess', this.success);
+        dpayEvent.removeListener('DpayFailure', this.failed);
+        dpayEvent.removeListener('DpayClose', this.close);
+        dpayEvent = null;
+      }
+    };
+  });
+
   const getOrderDetails = async () => {
     // xendit staging - ZHBfbGl2ZV9RMHNtem9sQ2dxRUFTakNOOg== ZHBfdGVzdF9lZDZiYTkzYzg5N2JiNzcxOg==
     //          production - ZHBfbGl2ZV9lZDZiYTkzYzg5N2JiNzdlMDo=
@@ -104,12 +126,12 @@ const App = () => {
     }
   };
 
-  const success = () => {
+  const success = data => {
     console.log(data);
     Alert.alert(data);
   };
 
-  const failed = () => {
+  const failed = data => {
     console.log(data);
     Alert.alert(data);
   };
@@ -135,17 +157,11 @@ const App = () => {
       customer_id: 'cust_react_001',
       amount: '15000',
       currency: 'IDR',
-      customer_email: 'joe@react_native.com',
+      customer_email: 'joe@reactnative.com',
       order_id: ordersJson.data.id,
       access_token: ordersJson.data.access_token,
     };
-    dpayEvent = new NativeEventEmitter(NativeModules.ReactNativeEventEmitter);
-    dpayEvent.addListener('DpaySuccess', success);
-    dpayEvent.addListener('DpayFailure', failed);
-    dpayEvent.addListener('DpayClose', (data) => {close(data)});
-    CalendarManager.constantsToExport();
-    RNDpaySDK.open(checkoutOptions);
-    //DpaySDK
+    NativeModules.DpaySdk.openCheckout(checkoutOptions);
   };
 
   return (
