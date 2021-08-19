@@ -104,12 +104,11 @@ const App = () => {
     //          production - ZHBfbGl2ZV9lZDZiYTkzYzg5N2JiNzdlMDo=
     try {
       const customer = {email: 'jude_casper@koss.info'};
-      const response = await fetch('https://api.durianpay.id/orders', {
+      const response = await fetch('https://localhost:4001/orders', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          Authorization: 'ZHBfbGl2ZV9lZDZiYTkzYzg5N2JiNzdlMDo=',
         },
         body: JSON.stringify({
           amount: '15000',
