@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Component } from "react";
 import { FontAwesome5 } from "@expo/vector-icons";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, connect } from "react-redux";
 import { TouchableOpacity } from "react-native-gesture-handler";
-import { 
-  ScrollView, 
-  StyleSheet, 
-  Dimensions, 
-  View, 
-  Text, 
+import {
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  View,
+  Text,
   NativeEventEmitter,
   NativeModules,
   Alert,
   Platform,
-  ToastAndroid } from "react-native";
+  ToastAndroid
+} from "react-native";
 
 import { getGroceryItem } from "../services";
 import {
@@ -22,64 +23,73 @@ import {
 } from "../store/actions/grocery";
 import { CartCard, EmptyState } from "../components";
 
-function Cart({ navigation }) {
-  const dispatch = useDispatch();
+class Cart extends Component {
+  state = {
+    items: []
+  }
 
-  const windowHeight = Dimensions.get("window").height;
+  dpayEvent = null;
 
-  const { cart } = useSelector((state) => state.groceryState);
+  componentDidMount() {
+    this.startup()
+  }
 
-  const [items, setItems] = useState([]);
+  componentDidUpdate(prevProps) {
+    if (prevProps.cart !== this.props.cart) {
+      this.startup()
+    }
+  }
 
-  useEffect(() => {
-    (async () => {
-      const keys = Object.keys(cart).filter((key) => !!cart[key]);
-      const promises = keys.map((id) => getGroceryItem(id));
-      const data = (await Promise.all(promises)).map((d) => d.data);
+  componentWillUnmount() {
+    this.cleanup()
+  }
 
-      setItems(data);
-    })();
+  startup = async () => {
+    const { cart } = this.props;
 
-    dpayEvent = new NativeEventEmitter(NativeModules.RNDpaySDK);
-    dpayEvent.addListener('DpaySuccess', data => {
-      success(data);
+    const keys = Object.keys(cart).filter((key) => !!cart[key]);
+    const promises = keys.map((id) => getGroceryItem(id));
+    const data = (await Promise.all(promises)).map((d) => d.data);
+
+    this.setState({ items: data });
+
+    this.cleanup()
+
+    this.dpayEvent = new NativeEventEmitter(NativeModules.DpaySdk);
+    this.dpayEvent.addListener('DpaySuccess', data => {
+      this.success(data);
     });
-    dpayEvent.addListener('DpayFailure', data => {
-      failed(data);
+    this.dpayEvent.addListener('DpayFailure', data => {
+      this.failed(data);
     });
-    dpayEvent.addListener('DpayClose', data => {
-      close(data);
+    this.dpayEvent.addListener('DpayClose', data => {
+      this.close(data);
     });
-    return function cleanup() {
-      if (dpayEvent) {
-        dpayEvent.removeListener('DpaySuccess', this.success);
-        dpayEvent.removeListener('DpayFailure', this.failed);
-        dpayEvent.removeListener('DpayClose', this.close);
-        dpayEvent = null;
-      }
-    };
-  }, [cart]);
+  }
 
-  const handleUpdate = ({ type, item }) => {
+  cleanup = () => {
+    if (this.dpayEvent) {
+      this.dpayEvent.removeListener('DpaySuccess', this.success);
+      this.dpayEvent.removeListener('DpayFailure', this.failed);
+      this.dpayEvent.removeListener('DpayClose', this.close);
+      this.dpayEvent = null;
+    }
+  }
+
+  handleUpdate = ({ type, item }) => {
     if (type === "PLUS") {
-      dispatch(addToCart(item));
+      this.props.addToCart(item);
     } else if (type === "MINUS") {
-      dispatch(removeFromCart(item));
+      this.props.removeFromCart(item);
     } else if (type === "DELETE") {
-      dispatch(clearFromCart(item));
+      this.props.clearFromCart(item);
     }
   };
 
-  const total = items.reduce((a, b) => a + cart[b.id] * b.price, 0);
-
-  const {RNDpaySdk} = NativeModules;
-
-  var dpayEvent = null;
-
-  const getOrderDetails = async () => {
+  getOrderDetails = async () => {
     try {
-      const customer = {email: 'jude_casper@koss.info'};
-      const response = await fetch('http://192.168.247.111:4001/orders', {
+      const customer = { email: 'jude_casper@koss.info' };
+      const response = await fetch('https://localhost:4001/orders', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -94,13 +104,13 @@ function Cart({ navigation }) {
       });
       const json = await response.json();
       console.log('json', json);
-      return json;
+      return json.data;
     } catch (error) {
       console.error(error);
     }
   };
 
-  const success = data => {
+  success = data => {
     console.log(data);
     if (Platform.OS == 'ios') Alert.alert(data);
     if (Platform.OS == 'android')
@@ -113,7 +123,7 @@ function Cart({ navigation }) {
       );
   };
 
-  const failed = data => {
+  failed = data => {
     console.log(data);
     if (Platform.OS == 'ios') Alert.alert(data);
     if (Platform.OS == 'android')
@@ -126,7 +136,7 @@ function Cart({ navigation }) {
       );
   };
 
-  const close = data => {
+  close = data => {
     console.log(data);
     if (Platform.OS == 'ios') Alert.alert(data);
     if (Platform.OS == 'android')
@@ -138,119 +148,131 @@ function Cart({ navigation }) {
         50,
       );
   };
-  
-  const openCheckoutPage = async () => {
+
+  openCheckoutPage = async () => {
+    const { DpaySdk } = NativeModules;
     console.log('open checkout');
-    var ordersJson = await getOrderDetails();
+    var ordersJson = await this.getOrderDetails();
     var checkoutOptions = {
-      environment: 'staging',
+      environment: 'production',
       locale: 'en',
       site_name: 'Movie Ticket',
       customer_id: 'cust_react_001',
       amount: '15000',
       currency: 'IDR',
       customer_email: 'joe@reactnative.com',
-      order_id: ordersJson.order_id,
+      order_id: ordersJson.id,
       access_token: ordersJson.access_token,
     };
 
-    // console.log("native modules", Object.list(NativeModules));
-    RNDpaySdk.openCheckout(checkoutOptions);
+    // console.log("native modules", "to call checkout");
+    DpaySdk.openCheckout(checkoutOptions);
   };
 
-  return (
-    <View style={{ ...styles.container, minHeight: windowHeight }}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesome5
-            style={{ margin: 12 }}
-            name="chevron-left"
-            color="#424242"
-            size={24}
-          />
-        </TouchableOpacity>
-        <Text style={styles.heading}>Cart</Text>
-        <View style={{ width: 45 }}></View>
-      </View>
-      <ScrollView>
-        {items.length ? (
-          <View style={{ marginTop: 8, paddingBottom: 96 }}>
-            {items.map((item) => (
-              <CartCard
-                data={item}
-                cart={cart}
-                key={item.id}
-                navigation={navigation}
-                onUpdate={handleUpdate}
-              ></CartCard>
-            ))}
-            <View
-              style={{
-                padding: 16,
-                paddingVertical: 24,
-                minWidth: "100%",
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
+  render() {
+    const windowHeight = Dimensions.get("window").height;
+
+    const { cart } = this.props;
+
+    const { items } = this.state;
+    const total = items.reduce((a, b) => a + cart[b.id] * b.price, 0);
+
+
+    return (
+      <View style={{ ...styles.container, minHeight: windowHeight }}>
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
+            <FontAwesome5
+              style={{ margin: 12 }}
+              name="chevron-left"
+              color="#424242"
+              size={24}
+            />
+          </TouchableOpacity>
+          <Text style={styles.heading}>Cart</Text>
+          <View style={{ width: 45 }}></View>
+        </View>
+        <ScrollView>
+          {items.length ? (
+            <View style={{ marginTop: 8, paddingBottom: 96 }}>
+              {items.map((item) => (
+                <CartCard
+                  data={item}
+                  cart={cart}
+                  key={item.id}
+                  navigation={this.props.navigation}
+                  onUpdate={this.handleUpdate}
+                ></CartCard>
+              ))}
+              <View
                 style={{
-                  fontSize: 24,
-                  color: "#424242",
-                  fontFamily: "Montserrat-Regular",
+                  padding: 16,
+                  paddingVertical: 24,
+                  minWidth: "100%",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
                 }}
               >
-                Total
-              </Text>
-              <View style={{ flexDirection: "row", alignContent: "center" }}>
-                <FontAwesome5
-                  size={20}
-                  color="#424242"
-                  name="rupee-sign"
-                  style={{ paddingTop: 7, paddingRight: 2 }}
-                />
                 <Text
                   style={{
                     fontSize: 24,
                     color: "#424242",
+                    fontFamily: "Montserrat-Regular",
+                  }}
+                >
+                  Total
+                </Text>
+                <View style={{ flexDirection: "row", alignContent: "center" }}>
+                  <FontAwesome5
+                    size={20}
+                    color="#424242"
+                    name="rupee-sign"
+                    style={{ paddingTop: 7, paddingRight: 2 }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      color: "#424242",
+                      fontFamily: "Montserrat-SemiBold",
+                    }}
+                  >
+                    {total}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={this.openCheckoutPage}
+                style={{
+                  backgroundColor: "#655DB0",
+                  borderRadius: 16,
+                  padding: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    color: "#FFFFFF",
+                    textAlign: "center",
                     fontFamily: "Montserrat-SemiBold",
                   }}
                 >
-                  {total}
+                  PLACE ORDER
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              onPress={openCheckoutPage}
-              style={{
-                backgroundColor: "#655DB0",
-                borderRadius: 16,
-                padding: 16,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  color: "#FFFFFF",
-                  textAlign: "center",
-                  fontFamily: "Montserrat-SemiBold",
-                }}
-              >
-                PLACE ORDER
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <EmptyState
-            type="cart"
-            message="No Items in cart"
-            description="When you are ready, go ahead and add some"
-          />
-        )}
-      </ScrollView>
-    </View>
-  );
+          ) : (
+            <EmptyState
+              type="cart"
+              message="No Items in cart"
+              description="When you are ready, go ahead and add some"
+            />
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
 }
+
 
 Cart.sharedElements = (route) => {
   const {
@@ -282,4 +304,15 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Cart;
+
+const mapStateToProps = ({ groceryState }) => ({
+  cart: groceryState.cart
+})
+
+const mapDispatchToProps = {
+  addToCart,
+  removeFromCart,
+  clearFromCart,
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Cart);
