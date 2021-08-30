@@ -12,7 +12,8 @@ import {
   NativeModules,
   Alert,
   Platform,
-  ToastAndroid
+  ToastAndroid,
+  ActivityIndicator,
 } from "react-native";
 
 import { getGroceryItem } from "../services";
@@ -25,23 +26,24 @@ import { CartCard, EmptyState } from "../components";
 
 class Cart extends Component {
   state = {
-    items: []
-  }
+    items: [],
+    loading: false,
+  };
 
   dpayEvent = null;
 
   componentDidMount() {
-    this.startup()
+    this.startup();
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.cart !== this.props.cart) {
-      this.startup()
+      this.startup();
     }
   }
 
   componentWillUnmount() {
-    this.cleanup()
+    this.cleanup();
   }
 
   startup = async () => {
@@ -53,28 +55,28 @@ class Cart extends Component {
 
     this.setState({ items: data });
 
-    this.cleanup()
+    this.cleanup();
 
     this.dpayEvent = new NativeEventEmitter(NativeModules.DpaySdk);
-    this.dpayEvent.addListener('DpaySuccess', data => {
+    this.dpayEvent.addListener("DpaySuccess", (data) => {
       this.success(data);
     });
-    this.dpayEvent.addListener('DpayFailure', data => {
+    this.dpayEvent.addListener("DpayFailure", (data) => {
       this.failed(data);
     });
-    this.dpayEvent.addListener('DpayClose', data => {
+    this.dpayEvent.addListener("DpayClose", (data) => {
       this.close(data);
     });
-  }
+  };
 
   cleanup = () => {
     if (this.dpayEvent) {
-      this.dpayEvent.removeListener('DpaySuccess', this.success);
-      this.dpayEvent.removeListener('DpayFailure', this.failed);
-      this.dpayEvent.removeListener('DpayClose', this.close);
+      this.dpayEvent.removeListener("DpaySuccess", this.success);
+      this.dpayEvent.removeListener("DpayFailure", this.failed);
+      this.dpayEvent.removeListener("DpayClose", this.close);
       this.dpayEvent = null;
     }
-  }
+  };
 
   handleUpdate = ({ type, item }) => {
     if (type === "PLUS") {
@@ -88,80 +90,61 @@ class Cart extends Component {
 
   getOrderDetails = async () => {
     try {
-      const customer = { email: 'jude_casper@koss.info' };
-      const response = await fetch('https://localhost:4001/orders', {
-        method: 'POST',
+      this.setState({ loading: true });
+      const customer = { email: "jude_casper@koss.info" };
+      const response = await fetch("http://192.168.199.111:4001/orders", {
+        method: "POST",
         headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: '10001',
-          currency: 'IDR',
-          order_ref_id: 'ord_key_001',
+          amount: "10001",
+          currency: "IDR",
+          order_ref_id: "ord_key_001",
           customer: customer,
         }),
       });
       const json = await response.json();
-      console.log('json', json);
-      return json.data;
+      console.log("json", json);
+      return json;
     } catch (error) {
       console.error(error);
     }
   };
 
-  success = data => {
-    console.log(data);
-    if (Platform.OS == 'ios') Alert.alert(data);
-    if (Platform.OS == 'android')
-      ToastAndroid.showWithGravityAndOffset(
-        data,
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+  success = (data) => {
+    var json = JSON.parse(data);
+    //this is the successful payment id
+    console.log(json.response.payment_id);
   };
 
-  failed = data => {
-    console.log(data);
-    if (Platform.OS == 'ios') Alert.alert(data);
-    if (Platform.OS == 'android')
-      ToastAndroid.showWithGravityAndOffset(
-        data,
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+  failed = (data) => {
+    var json = JSON.parse(data);
+    //this is failed payment id
+    console.log(json.response.payment_id);
   };
 
-  close = data => {
-    console.log(data);
-    if (Platform.OS == 'ios') Alert.alert(data);
-    if (Platform.OS == 'android')
-      ToastAndroid.showWithGravityAndOffset(
-        data,
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+  close = (data) => {
+    var json = JSON.parse(data);
+    //this is order id when closed
+    console.log(json.response.order_id);
   };
 
   openCheckoutPage = async () => {
     const { DpaySdk } = NativeModules;
-    console.log('open checkout');
+    console.log("open checkout");
     var ordersJson = await this.getOrderDetails();
+    this.setState({ loading: false });
     var checkoutOptions = {
-      environment: 'production',
-      locale: 'en',
-      site_name: 'Movie Ticket',
-      customer_id: 'cust_react_001',
-      amount: '15000',
-      currency: 'IDR',
-      customer_email: 'joe@reactnative.com',
-      order_id: ordersJson.id,
+      environment: "staging",
+      locale: "en",
+      site_name: "Movie Ticket",
+      customer_id: "cust_react_001",
+      amount: "15000",
+      currency: "IDR",
+      customer_email: "joe@reactnative.com",
+      order_id: ordersJson.order_id,
       access_token: ordersJson.access_token,
     };
 
@@ -174,18 +157,22 @@ class Cart extends Component {
 
     const { cart } = this.props;
 
-    const { items } = this.state;
+    const { items, loading } = this.state;
     const total = items.reduce((a, b) => a + cart[b.id] * b.price, 0);
-
 
     return (
       <View style={{ ...styles.container, minHeight: windowHeight }}>
+        {loading && (
+          <View style={styles.loading}>
+            <ActivityIndicator size='large' color='#00ff00' />
+          </View>
+        )}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
             <FontAwesome5
               style={{ margin: 12 }}
-              name="chevron-left"
-              color="#424242"
+              name='chevron-left'
+              color='#424242'
               size={24}
             />
           </TouchableOpacity>
@@ -225,8 +212,8 @@ class Cart extends Component {
                 <View style={{ flexDirection: "row", alignContent: "center" }}>
                   <FontAwesome5
                     size={20}
-                    color="#424242"
-                    name="rupee-sign"
+                    color='#424242'
+                    name='rupee-sign'
                     style={{ paddingTop: 7, paddingRight: 2 }}
                   />
                   <Text
@@ -262,9 +249,9 @@ class Cart extends Component {
             </View>
           ) : (
             <EmptyState
-              type="cart"
-              message="No Items in cart"
-              description="When you are ready, go ahead and add some"
+              type='cart'
+              message='No Items in cart'
+              description='When you are ready, go ahead and add some'
             />
           )}
         </ScrollView>
@@ -272,7 +259,6 @@ class Cart extends Component {
     );
   }
 }
-
 
 Cart.sharedElements = (route) => {
   const {
@@ -290,6 +276,22 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#F2F2F2",
   },
+  activityContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  loading: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    opacity: 0.5,
+    backgroundColor: "black",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
   topBar: {
     minWidth: "100%",
     flexDirection: "row",
@@ -304,15 +306,14 @@ const styles = StyleSheet.create({
   },
 });
 
-
 const mapStateToProps = ({ groceryState }) => ({
-  cart: groceryState.cart
-})
+  cart: groceryState.cart,
+});
 
 const mapDispatchToProps = {
   addToCart,
   removeFromCart,
   clearFromCart,
-}
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(Cart);
