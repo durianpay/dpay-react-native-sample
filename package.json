@@ -21,8 +21,14 @@
     "react": "17.0.1",
     "react-dom": "16.13.1",
     "react-native": "0.64.2",
+<<<<<<< HEAD
     "react-native-dpay-sdk": "1.0.0",
     "react-native-gesture-handler": "~1.7.0",
+=======
+    "react-native-config": "^1.4.3",
+    "react-native-dpay-sdk": "../../dpay-react-native-sdk/",
+    "react-native-gesture-handler": "^1.10.3",
+>>>>>>> 0d8fb22f38aeb2535bedc2d5f917813d09a88a84
     "react-native-reanimated": "~1.13.0",
     "react-native-safe-area-context": "3.1.4",
     "react-native-screens": "~2.10.1",
