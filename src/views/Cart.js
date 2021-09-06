@@ -24,13 +24,13 @@ import {
 } from "../store/actions/grocery";
 import { CartCard, EmptyState } from "../components";
 
+import RNDpaySdk from "react-native-dpay-sdk";
+
 class Cart extends Component {
   state = {
     items: [],
     loading: false,
   };
-
-  dpayEvent = null;
 
   componentDidMount() {
     this.startup();
@@ -42,10 +42,6 @@ class Cart extends Component {
     }
   }
 
-  componentWillUnmount() {
-    this.cleanup();
-  }
-
   startup = async () => {
     const { cart } = this.props;
 
@@ -54,28 +50,6 @@ class Cart extends Component {
     const data = (await Promise.all(promises)).map((d) => d.data);
 
     this.setState({ items: data });
-
-    this.cleanup();
-
-    this.dpayEvent = new NativeEventEmitter(NativeModules.DpaySdk);
-    this.dpayEvent.addListener("DpaySuccess", (data) => {
-      this.success(data);
-    });
-    this.dpayEvent.addListener("DpayFailure", (data) => {
-      this.failed(data);
-    });
-    this.dpayEvent.addListener("DpayClose", (data) => {
-      this.close(data);
-    });
-  };
-
-  cleanup = () => {
-    if (this.dpayEvent) {
-      this.dpayEvent.removeListener("DpaySuccess", this.success);
-      this.dpayEvent.removeListener("DpayFailure", this.failed);
-      this.dpayEvent.removeListener("DpayClose", this.close);
-      this.dpayEvent = null;
-    }
   };
 
   handleUpdate = ({ type, item }) => {
@@ -92,7 +66,7 @@ class Cart extends Component {
     try {
       this.setState({ loading: true });
       const customer = { email: "jude_casper@koss.info" };
-      const response = await fetch("http://192.168.199.111:4001/orders", {
+      const response = await fetch("http://192.168.3.111:4001/orders", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -132,7 +106,6 @@ class Cart extends Component {
   };
 
   openCheckoutPage = async () => {
-    const { DpaySdk } = NativeModules;
     console.log("open checkout");
     var ordersJson = await this.getOrderDetails();
     this.setState({ loading: false });
@@ -148,8 +121,7 @@ class Cart extends Component {
       access_token: ordersJson.access_token,
     };
 
-    // console.log("native modules", "to call checkout");
-    DpaySdk.openCheckout(checkoutOptions);
+    RNDpaySdk.open(checkoutOptions, this.success, this.failed, this.close);
   };
 
   render() {
