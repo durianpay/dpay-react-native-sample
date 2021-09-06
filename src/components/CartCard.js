@@ -21,7 +21,7 @@ export default function CartCard({ navigation, data, cart, onUpdate }) {
           onPress={() => navigation.push("Detail", { item: data })}
         >
           <SharedElement id={`item.${id}.photo`}>
-            <Image style={styles.photo} resizeMode="contain" source={image} />
+            <Image style={styles.photo} resizeMode='contain' source={image} />
           </SharedElement>
         </TouchableOpacity>
         <View style={{ padding: 8, paddingLeft: 16 }}>
@@ -31,29 +31,30 @@ export default function CartCard({ navigation, data, cart, onUpdate }) {
               style={styles.countIcon}
               onPress={() => handleUpdate("PLUS")}
             >
-              <FontAwesome5 name="plus" size={12} color="#FFFFFF" />
+              <FontAwesome5 name='plus' size={12} color='#FFFFFF' />
             </TouchableOpacity>
             <Text style={styles.count}>{cart[id]}</Text>
             <TouchableOpacity
               style={styles.countIcon}
               onPress={() => handleUpdate("MINUS")}
             >
-              <FontAwesome5 name="minus" size={12} color="#FFFFFF" />
+              <FontAwesome5 name='minus' size={12} color='#FFFFFF' />
             </TouchableOpacity>
             <Text style={styles.weight}>x {weight}</Text>
           </View>
         </View>
       </View>
       <View style={styles.priceBox}>
-        <FontAwesome5
-          style={{ paddingTop: 2, paddingRight: 2 }}
-          name="rupee-sign"
-          color="#424242"
-          size={12}
-        />
+        <Text
+          size={18}
+          color='#424242'
+          style={{ paddingTop: 4, paddingRight: 2 }}
+        >
+          Rp{" "}
+        </Text>
         <Text style={styles.price}>{price * cart[id]}</Text>
         <TouchableOpacity onPress={() => handleUpdate("DELETE")}>
-          <FontAwesome5 name="trash-alt" size={20} color="#424242" />
+          <FontAwesome5 name='trash-alt' size={20} color='#424242' />
         </TouchableOpacity>
       </View>
     </View>

@@ -25,6 +25,27 @@ import {
 import { CartCard, EmptyState } from "../components";
 
 import RNDpaySdk from "react-native-dpay-sdk";
+import {
+  CURRENCY,
+  CUSTOMERADDRESSLINE1,
+  CUSTOMERCITY,
+  CUSTOMERCOUNTRY,
+  CUSTOMERMOBILE,
+  CUSTOMERPOSTALCODE,
+  CUSTOMERREGION,
+  CUSTOMER_EMAIL,
+  CUSTOMER_REF_ID,
+  ENVIRONMENT,
+  LABEL,
+  LANDMARK,
+  LOCALE,
+  MERCHANT_BACKEND_URL,
+  ORDER_REF_ID,
+  PAYMENT_TYPE,
+  RECEIVERNAME,
+  RECEIVERPHONE,
+  SITE_NAME,
+} from "./Constants";
 
 class Cart extends Component {
   state = {
@@ -62,20 +83,20 @@ class Cart extends Component {
     }
   };
 
-  getOrderDetails = async () => {
+  getOrderDetails = async (amount) => {
     try {
       this.setState({ loading: true });
-      const customer = { email: "jude_casper@koss.info" };
-      const response = await fetch("http://192.168.3.111:4001/orders", {
+      const customer = { email: CUSTOMER_EMAIL };
+      const response = await fetch(MERCHANT_BACKEND_URL, {
         method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: "10001",
-          currency: "IDR",
-          order_ref_id: "ord_key_001",
+          amount: amount.toString(),
+          currency: CURRENCY,
+          order_ref_id: ORDER_REF_ID,
           customer: customer,
         }),
       });
@@ -105,20 +126,32 @@ class Cart extends Component {
     console.log(json.response.order_id);
   };
 
-  openCheckoutPage = async () => {
+  openCheckoutPage = async (amount) => {
     console.log("open checkout");
-    var ordersJson = await this.getOrderDetails();
+    var ordersJson = await this.getOrderDetails(amount);
     this.setState({ loading: false });
     var checkoutOptions = {
-      environment: "staging",
-      locale: "en",
-      site_name: "Movie Ticket",
-      customer_id: "cust_react_001",
-      amount: "15000",
-      currency: "IDR",
-      customer_email: "joe@reactnative.com",
+      environment: ENVIRONMENT,
+      locale: LOCALE,
+      site_name: SITE_NAME,
+      customer_id: CUSTOMER_REF_ID,
+      amount: amount.toString(),
+      currency: CURRENCY,
+      customer_email: CUSTOMER_EMAIL,
       order_id: ordersJson.order_id,
       access_token: ordersJson.access_token,
+
+      payment_type: PAYMENT_TYPE,
+      label: LABEL,
+      landmark: LANDMARK,
+      receiver_name: RECEIVERNAME,
+      receiver_phone: RECEIVERPHONE,
+      customer_city: CUSTOMERCITY,
+      customer_region: CUSTOMERREGION,
+      customer_country: CUSTOMERCOUNTRY,
+      customer_postal_code: CUSTOMERPOSTALCODE,
+      customer_address_line1: CUSTOMERADDRESSLINE1,
+      customer_mobile: CUSTOMERMOBILE,
     };
 
     RNDpaySdk.open(checkoutOptions, this.success, this.failed, this.close);
@@ -182,12 +215,13 @@ class Cart extends Component {
                   Total
                 </Text>
                 <View style={{ flexDirection: "row", alignContent: "center" }}>
-                  <FontAwesome5
-                    size={20}
+                  <Text
+                    size={18}
                     color='#424242'
-                    name='rupee-sign'
-                    style={{ paddingTop: 7, paddingRight: 2 }}
-                  />
+                    style={{ paddingTop: 4, paddingRight: 2 }}
+                  >
+                    Rp{" "}
+                  </Text>
                   <Text
                     style={{
                       fontSize: 24,
@@ -200,7 +234,7 @@ class Cart extends Component {
                 </View>
               </View>
               <TouchableOpacity
-                onPress={this.openCheckoutPage}
+                onPress={() => this.openCheckoutPage(total)}
                 style={{
                   backgroundColor: "#655DB0",
                   borderRadius: 16,
