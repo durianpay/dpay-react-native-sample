@@ -154,7 +154,12 @@ class Cart extends Component {
       customer_mobile: CUSTOMER_MOBILE,
     };
 
-    RNDpaySdk.open(checkoutOptions, this.success, this.failed, this.close);
+    RNDpaySdk.openCheckout(
+      checkoutOptions,
+      this.success,
+      this.failed,
+      this.close
+    );
   };
 
   render() {
