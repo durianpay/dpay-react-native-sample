@@ -29,18 +29,19 @@ export default function ItemCard({ data, onUpdate, navigation }) {
         }}
       >
         <SharedElement id={`item.${id}.photo`}>
-          <Image style={styles.photo} resizeMode="contain" source={image} />
+          <Image style={styles.photo} resizeMode='contain' source={image} />
         </SharedElement>
       </TouchableOpacity>
       <View style={styles.content}>
         <View>
           <View style={styles.priceWrapper}>
-            <FontAwesome5
+            <Text
               size={18}
-              name="rupee-sign"
-              color="#424242"
-              style={{ paddingTop: 3 }}
-            />
+              color='#424242'
+              style={{ paddingTop: 4, paddingRight: 2 }}
+            >
+              Rp{" "}
+            </Text>
             <Text style={styles.price}> {price}</Text>
           </View>
           <Text style={styles.title}>{name}</Text>
@@ -55,13 +56,13 @@ export default function ItemCard({ data, onUpdate, navigation }) {
               style={styles.countIcon}
               onPress={() => handleOnPress("PLUS")}
             >
-              <FontAwesome5 name="plus" size={12} color="#FFFFFF" />
+              <FontAwesome5 name='plus' size={12} color='#FFFFFF' />
             </TouchableOpacity>
             <TouchableOpacity
               style={{ ...styles.countIcon, marginTop: 4 }}
               onPress={() => handleOnPress("MINUS")}
             >
-              <FontAwesome5 name="minus" size={12} color="#FFFFFF" />
+              <FontAwesome5 name='minus' size={12} color='#FFFFFF' />
             </TouchableOpacity>
           </View>
         </View>

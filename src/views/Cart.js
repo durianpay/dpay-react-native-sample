@@ -12,7 +12,8 @@ import {
   NativeModules,
   Alert,
   Platform,
-  ToastAndroid
+  ToastAndroid,
+  ActivityIndicator,
 } from "react-native";
 
 import { getGroceryItem } from "../services";
@@ -23,25 +24,43 @@ import {
 } from "../store/actions/grocery";
 import { CartCard, EmptyState } from "../components";
 
+import RNDpaySdk from "react-native-dpay-sdk";
+import {
+  CURRENCY,
+  CUSTOMERADDRESSLINE1,
+  CUSTOMERCITY,
+  CUSTOMERCOUNTRY,
+  CUSTOMERMOBILE,
+  CUSTOMERPOSTALCODE,
+  CUSTOMERREGION,
+  CUSTOMER_EMAIL,
+  CUSTOMER_REF_ID,
+  ENVIRONMENT,
+  LABEL,
+  LANDMARK,
+  LOCALE,
+  MERCHANT_BACKEND_URL,
+  ORDER_REF_ID,
+  PAYMENT_TYPE,
+  RECEIVERNAME,
+  RECEIVERPHONE,
+  SITE_NAME,
+} from "./Constants";
+
 class Cart extends Component {
   state = {
-    items: []
-  }
-
-  dpayEvent = null;
+    items: [],
+    loading: false,
+  };
 
   componentDidMount() {
-    this.startup()
+    this.startup();
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.cart !== this.props.cart) {
-      this.startup()
+      this.startup();
     }
-  }
-
-  componentWillUnmount() {
-    this.cleanup()
   }
 
   startup = async () => {
@@ -52,29 +71,7 @@ class Cart extends Component {
     const data = (await Promise.all(promises)).map((d) => d.data);
 
     this.setState({ items: data });
-
-    this.cleanup()
-
-    this.dpayEvent = new NativeEventEmitter(NativeModules.DpaySdk);
-    this.dpayEvent.addListener('DpaySuccess', data => {
-      this.success(data);
-    });
-    this.dpayEvent.addListener('DpayFailure', data => {
-      this.failed(data);
-    });
-    this.dpayEvent.addListener('DpayClose', data => {
-      this.close(data);
-    });
-  }
-
-  cleanup = () => {
-    if (this.dpayEvent) {
-      this.dpayEvent.removeListener('DpaySuccess', this.success);
-      this.dpayEvent.removeListener('DpayFailure', this.failed);
-      this.dpayEvent.removeListener('DpayClose', this.close);
-      this.dpayEvent = null;
-    }
-  }
+  };
 
   handleUpdate = ({ type, item }) => {
     if (type === "PLUS") {
@@ -86,87 +83,78 @@ class Cart extends Component {
     }
   };
 
-  getOrderDetails = async () => {
+  getOrderDetails = async (amount) => {
     try {
-      const customer = { email: 'jude_casper@koss.info' };
-      const response = await fetch('https://localhost:4001/orders', {
-        method: 'POST',
+      this.setState({ loading: true });
+      const customer = { email: CUSTOMER_EMAIL };
+      const response = await fetch(MERCHANT_BACKEND_URL, {
+        method: "POST",
         headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: '10001',
-          currency: 'IDR',
-          order_ref_id: 'ord_key_001',
+          amount: amount.toString(),
+          currency: CURRENCY,
+          order_ref_id: ORDER_REF_ID,
           customer: customer,
         }),
       });
       const json = await response.json();
-      console.log('json', json);
-      return json.data;
+      console.log("json", json);
+      return json;
     } catch (error) {
       console.error(error);
     }
   };
 
-  success = data => {
-    console.log(data);
-    if (Platform.OS == 'ios') Alert.alert(data);
-    if (Platform.OS == 'android')
-      ToastAndroid.showWithGravityAndOffset(
-        data,
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+  success = (data) => {
+    var json = JSON.parse(data);
+    //this is the successful payment id
+    console.log(json.response.payment_id);
   };
 
-  failed = data => {
-    console.log(data);
-    if (Platform.OS == 'ios') Alert.alert(data);
-    if (Platform.OS == 'android')
-      ToastAndroid.showWithGravityAndOffset(
-        data,
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+  failed = (data) => {
+    var json = JSON.parse(data);
+    //this is failed payment id
+    console.log(json.response.payment_id);
   };
 
-  close = data => {
-    console.log(data);
-    if (Platform.OS == 'ios') Alert.alert(data);
-    if (Platform.OS == 'android')
-      ToastAndroid.showWithGravityAndOffset(
-        data,
-        ToastAndroid.LONG,
-        ToastAndroid.BOTTOM,
-        25,
-        50,
-      );
+  close = (data) => {
+    var json = JSON.parse(data);
+    //this is order id when closed
+    console.log(json.response.order_id);
   };
 
-  openCheckoutPage = async () => {
-    const { DpaySdk } = NativeModules;
-    console.log('open checkout');
-    var ordersJson = await this.getOrderDetails();
+  openCheckoutPage = async (amount) => {
+    console.log("open checkout");
+    var ordersJson = await this.getOrderDetails(amount);
+    this.setState({ loading: false });
     var checkoutOptions = {
-      environment: 'production',
-      locale: 'en',
-      site_name: 'Movie Ticket',
-      customer_id: 'cust_react_001',
-      amount: '15000',
-      currency: 'IDR',
-      customer_email: 'joe@reactnative.com',
-      order_id: ordersJson.id,
+      environment: ENVIRONMENT,
+      locale: LOCALE,
+      site_name: SITE_NAME,
+      customer_id: CUSTOMER_REF_ID,
+      amount: amount.toString(),
+      currency: CURRENCY,
+      customer_email: CUSTOMER_EMAIL,
+      order_id: ordersJson.order_id,
       access_token: ordersJson.access_token,
+
+      payment_type: PAYMENT_TYPE,
+      label: LABEL,
+      landmark: LANDMARK,
+      receiver_name: RECEIVERNAME,
+      receiver_phone: RECEIVERPHONE,
+      customer_city: CUSTOMERCITY,
+      customer_region: CUSTOMERREGION,
+      customer_country: CUSTOMERCOUNTRY,
+      customer_postal_code: CUSTOMERPOSTALCODE,
+      customer_address_line1: CUSTOMERADDRESSLINE1,
+      customer_mobile: CUSTOMERMOBILE,
     };
 
-    // console.log("native modules", "to call checkout");
-    DpaySdk.openCheckout(checkoutOptions);
+    RNDpaySdk.open(checkoutOptions, this.success, this.failed, this.close);
   };
 
   render() {
@@ -174,18 +162,22 @@ class Cart extends Component {
 
     const { cart } = this.props;
 
-    const { items } = this.state;
+    const { items, loading } = this.state;
     const total = items.reduce((a, b) => a + cart[b.id] * b.price, 0);
-
 
     return (
       <View style={{ ...styles.container, minHeight: windowHeight }}>
+        {loading && (
+          <View style={styles.loading}>
+            <ActivityIndicator size='large' color='#00ff00' />
+          </View>
+        )}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
             <FontAwesome5
               style={{ margin: 12 }}
-              name="chevron-left"
-              color="#424242"
+              name='chevron-left'
+              color='#424242'
               size={24}
             />
           </TouchableOpacity>
@@ -223,12 +215,13 @@ class Cart extends Component {
                   Total
                 </Text>
                 <View style={{ flexDirection: "row", alignContent: "center" }}>
-                  <FontAwesome5
-                    size={20}
-                    color="#424242"
-                    name="rupee-sign"
-                    style={{ paddingTop: 7, paddingRight: 2 }}
-                  />
+                  <Text
+                    size={18}
+                    color='#424242'
+                    style={{ paddingTop: 4, paddingRight: 2 }}
+                  >
+                    Rp{" "}
+                  </Text>
                   <Text
                     style={{
                       fontSize: 24,
@@ -241,7 +234,7 @@ class Cart extends Component {
                 </View>
               </View>
               <TouchableOpacity
-                onPress={this.openCheckoutPage}
+                onPress={() => this.openCheckoutPage(total)}
                 style={{
                   backgroundColor: "#655DB0",
                   borderRadius: 16,
@@ -262,9 +255,9 @@ class Cart extends Component {
             </View>
           ) : (
             <EmptyState
-              type="cart"
-              message="No Items in cart"
-              description="When you are ready, go ahead and add some"
+              type='cart'
+              message='No Items in cart'
+              description='When you are ready, go ahead and add some'
             />
           )}
         </ScrollView>
@@ -272,7 +265,6 @@ class Cart extends Component {
     );
   }
 }
-
 
 Cart.sharedElements = (route) => {
   const {
@@ -290,6 +282,22 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#F2F2F2",
   },
+  activityContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  loading: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    opacity: 0.5,
+    backgroundColor: "black",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
   topBar: {
     minWidth: "100%",
     flexDirection: "row",
@@ -304,15 +312,14 @@ const styles = StyleSheet.create({
   },
 });
 
-
 const mapStateToProps = ({ groceryState }) => ({
-  cart: groceryState.cart
-})
+  cart: groceryState.cart,
+});
 
 const mapDispatchToProps = {
   addToCart,
   removeFromCart,
   clearFromCart,
-}
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(Cart);

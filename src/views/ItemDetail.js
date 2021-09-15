@@ -16,23 +16,24 @@ function ItemDetail({
       <TouchableOpacity onPress={() => navigation.goBack()}>
         <FontAwesome5
           style={{ margin: 12 }}
-          name="chevron-left"
-          color="#424242"
+          name='chevron-left'
+          color='#424242'
           size={24}
         />
       </TouchableOpacity>
       <SharedElement id={`item.${id}.photo`}>
-        <Image style={styles.box} source={image} resizeMode="contain" />
+        <Image style={styles.box} source={image} resizeMode='contain' />
       </SharedElement>
       <View style={{ padding: 8 }}>
         <Text style={styles.title}>{name}</Text>
         <View style={styles.priceWrapper}>
-          <FontAwesome5
+          <Text
             size={18}
-            color="#424242"
-            name="rupee-sign"
+            color='#424242'
             style={{ paddingTop: 4, paddingRight: 2 }}
-          />
+          >
+            Rp{" "}
+          </Text>
           <Text style={styles.price}>{price}</Text>
         </View>
 
