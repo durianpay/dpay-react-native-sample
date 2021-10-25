@@ -27,12 +27,12 @@ import { CartCard, EmptyState } from "../components";
 import RNDpaySdk from "react-native-dpay-sdk";
 import {
   CURRENCY,
-  CUSTOMERADDRESSLINE1,
-  CUSTOMERCITY,
-  CUSTOMERCOUNTRY,
-  CUSTOMERMOBILE,
-  CUSTOMERPOSTALCODE,
-  CUSTOMERREGION,
+  CUSTOMER_ADDRESS_LINE1,
+  CUSTOMER_CITY,
+  CUSTOMER_COUNTRY,
+  CUSTOMER_MOBILE,
+  CUSTOMER_POSTAL_CODE,
+  CUSTOMER_REGION,
   CUSTOMER_EMAIL,
   CUSTOMER_REF_ID,
   ENVIRONMENT,
@@ -42,8 +42,8 @@ import {
   MERCHANT_BACKEND_URL,
   ORDER_REF_ID,
   PAYMENT_TYPE,
-  RECEIVERNAME,
-  RECEIVERPHONE,
+  RECEIVER_NAME,
+  RECEIVER_PHONE,
   SITE_NAME,
 } from "./Constants";
 
@@ -144,17 +144,22 @@ class Cart extends Component {
       payment_type: PAYMENT_TYPE,
       label: LABEL,
       landmark: LANDMARK,
-      receiver_name: RECEIVERNAME,
-      receiver_phone: RECEIVERPHONE,
-      customer_city: CUSTOMERCITY,
-      customer_region: CUSTOMERREGION,
-      customer_country: CUSTOMERCOUNTRY,
-      customer_postal_code: CUSTOMERPOSTALCODE,
-      customer_address_line1: CUSTOMERADDRESSLINE1,
-      customer_mobile: CUSTOMERMOBILE,
+      receiver_name: RECEIVER_NAME,
+      receiver_phone: RECEIVER_PHONE,
+      customer_city: CUSTOMER_CITY,
+      customer_region: CUSTOMER_REGION,
+      customer_country: CUSTOMER_COUNTRY,
+      customer_postal_code: CUSTOMER_POSTAL_CODE,
+      customer_address_line1: CUSTOMER_ADDRESS_LINE1,
+      customer_mobile: CUSTOMER_MOBILE,
     };
 
-    RNDpaySdk.open(checkoutOptions, this.success, this.failed, this.close);
+    RNDpaySdk.openCheckout(
+      checkoutOptions,
+      this.success,
+      this.failed,
+      this.close
+    );
   };
 
   render() {
